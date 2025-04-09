@@ -1,0 +1,23 @@
+{
+  "name": "門禁通行證",
+  "short_name": "門禁通行證",
+  "description": "智能門禁一鍵通行",
+  "start_url": "/otp.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#007bff",
+  "icons": [
+    {
+      "src": "icons/icon-256x256.png",
+      "sizes": "256x256",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

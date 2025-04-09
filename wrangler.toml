@@ -1,0 +1,32 @@
+name = "home-otp"
+main = "src/worker.js"
+compatibility_date = "2023-10-02"
+
+workers_dev = true
+compatibility_flags = []
+
+[[kv_namespaces]]
+binding = "your_kv"
+id = "your_kv"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "your_db"
+database_id = "your_key"
+
+# 使用 Cloudflare 推薦的資產配置
+[assets]
+directory = "./public"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+
+# wrangler 日誌設置
+[observability.logs]
+enabled = true
+
+[placement]
+mode = "smart"
+
+[vars]
+TURNSTILE_SITE_KEY = "your_key"
+TURNSTILE_SECRET_KEY = "your_key"

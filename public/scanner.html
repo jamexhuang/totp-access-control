@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>門禁掃描器</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <!-- 引用新的掃描器專用樣式表 -->
+  <link rel="stylesheet" href="css/scanner.css">
+  <script src="https://cdn.jsdelivr.net/npm/html5-qrcode/html5-qrcode.min.js"></script>
+  
+  <!-- 添加自動更新檢測程式碼 -->
+  <script>
+    // 自動更新檢測
+    const AUTO_UPDATE = {
+      enabled: true,              // 是否啟用自動更新
+      checkInterval: 60 * 1000,   // 檢查間隔 (60秒)
+      autoReload: true,           // 自動重新載入頁面
+      notifyBeforeReload: true,   // 重新載入前通知用戶
+      reloadDelay: 3000,          // 通知後延遲重載時間 (3秒)
+      lastVersion: null,          // 記錄最後檢測到的版本
+      debug: false                // 關閉自動更新偵錯日誌
+    };
+    
+    // 自動更新日誌
+    function logUpdate(message, isError = false) {
+      // 如果禁用調試模式，不顯示任何日誌
+      if (!AUTO_UPDATE.debug) return;
+      
+      const now = new Date();
+      const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+      
+      // 輸出到控制台
+      if (isError) {
+        console.error(`[自動更新][${timeStr}] ${message}`);
+      } else {
+        console.log(`[自動更新][${timeStr}] ${message}`);
+      }
+      
+      // 如果頁面上有日誌容器，也添加到頁面
+      const logContainer = document.getElementById('log-container');
+      if (logContainer) {
+        const logEntry = document.createElement('div');
+        logEntry.className = `log-entry ${isError ? 'log-error' : ''}`;
+        logEntry.innerHTML = `<span class="log-time">[${timeStr}]</span> <span style="color: ${isError ? '#f44336' : '#2196F3'}">[自動更新]</span> ${message}`;
+        logContainer.prepend(logEntry);
+      }
+    }
+    
+    // 檢測當前設備是否為iOS
+    function isIOSDevice() {
+      return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    }
+    
+    // 初始化 Service Worker
+    if ('serviceWorker' in navigator) {
+      logUpdate(`檢測到支援 Service Worker，設備: ${navigator.userAgent}`);
+      
+      window.addEventListener('load', () => {
+        logUpdate('頁面載入完成，註冊 Service Worker');
+        
+        navigator.serviceWorker.register('/service-worker.js')
+          .then(registration => {
+            logUpdate(`Service Worker 註冊成功，範圍: ${registration.scope}`);
+            
+            if (registration.active) {
+              logUpdate('Service Worker 已激活');
+            } else {
+              logUpdate('Service Worker 尚未激活，等待中...');
+            }
+            
+            // 監聽 ServiceWorker 消息
+            navigator.serviceWorker.addEventListener('message', event => {
+              const message = event.data;
+              
+              logUpdate(`收到 Service Worker 消息: ${message.type}`);
+              
+              // 處理更新檢查請求
+              if (message.type === 'CHECK_UPDATES') {
+                logUpdate(`收到更新檢查請求，時間戳: ${message.timestamp}`);
+                checkForAppUpdates();
+              }
+              // 處理版本資訊響應
+              else if (message.type === 'VERSION_INFO') {
+                logUpdate(`收到版本信息響應，版本: ${message.version}, 開發模式: ${message.devMode}`);
+                handleVersionInfo(message);
+              }
+              // 處理 Service Worker 激活
+              else if (message.type === 'SW_ACTIVATED') {
+                logUpdate(`Service Worker 已激活，版本: ${message.version}`);
+              }
+            });
+            
+            // 初次檢查
+            setTimeout(() => {
+              logUpdate('執行初次更新檢查');
+              checkForAppUpdates();
+            }, 1000);
+            
+            // 設置定期檢查
+            if (AUTO_UPDATE.enabled) {
+              logUpdate(`設置定期更新檢查，間隔: ${AUTO_UPDATE.checkInterval}ms`);
+              
+              // 針對 iOS 設備縮短檢查間隔
+              const checkInterval = isIOSDevice() ? Math.min(AUTO_UPDATE.checkInterval, 30000) : AUTO_UPDATE.checkInterval;
+              
+              if (isIOSDevice()) {
+                logUpdate(`檢測到 iOS 設備，使用縮短的檢查間隔: ${checkInterval}ms`);
+              }
+              
+              setInterval(() => {
+                logUpdate('執行定期更新檢查');
+                checkForAppUpdates();
+              }, checkInterval);
+            }
+          })
+          .catch(err => {
+            // 改進錯誤處理，提供更多詳細信息
+            logUpdate(`Service Worker 註冊失敗: ${err}`, true);
+            logUpdate(`錯誤詳情: ${err.stack || '無堆棧跟蹤'}`, true);
+            
+            // 嘗試另一種方式註冊
+            if (err.toString().includes("Can't find variable: window")) {
+              logUpdate('檢測到Service Worker中有window引用錯誤，嘗試使用特殊模式註冊', true);
+              setTimeout(() => {
+                // 給一些時間讓錯誤不會連續觸發
+                try {
+                  // 使用Promise直接註冊，避免可能的錯誤
+                  navigator.serviceWorker.register('/service-worker.js', {
+                    scope: '/',
+                    updateViaCache: 'none'
+                  }).then(reg => {
+                    logUpdate('Service Worker 使用特殊模式註冊成功');
+                  }).catch(e => {
+                    logUpdate(`Service Worker 特殊模式註冊失敗: ${e}`, true);
+                  });
+                } catch(e2) {
+                  logUpdate(`Service Worker 註冊過程中發生異常: ${e2}`, true);
+                }
+              }, 2000);
+            }
+          });
+      });
+    } else {
+      logUpdate('此瀏覽器不支援 Service Worker，無法啟用自動更新', true);
+    }
+    
+    // 檢查應用更新
+    function checkForAppUpdates() {
+      logUpdate('開始檢查應用更新');
+      
+      if (navigator.serviceWorker.controller) {
+        logUpdate('發現 Service Worker 控制器，發送獲取版本消息');
+        try {
+          navigator.serviceWorker.controller.postMessage({
+            type: 'GET_VERSION',
+            timestamp: Date.now()
+          });
+          logUpdate('已發送獲取版本消息');
+        } catch(e) {
+          logUpdate(`發送獲取版本消息失敗: ${e}`, true);
+        }
+      } else {
+        logUpdate('未找到 Service Worker 控制器，無法檢查更新', true);
+      }
+    }
+    
+    // 處理版本信息
+    function handleVersionInfo(info) {
+      logUpdate(`處理版本信息: ${JSON.stringify(info)}`);
+      
+      // 首次收到版本信息，記錄版本號
+      if (AUTO_UPDATE.lastVersion === null) {
+        AUTO_UPDATE.lastVersion = info.version;
+        logUpdate(`首次記錄版本: ${AUTO_UPDATE.lastVersion}`);
+        return;
+      }
+      
+      // 如果版本不同，則需要更新
+      if (info.version !== AUTO_UPDATE.lastVersion) {
+        logUpdate(`發現新版本! 當前: ${AUTO_UPDATE.lastVersion}, 新版本: ${info.version}`);
+        
+        if (AUTO_UPDATE.autoReload) {
+          if (AUTO_UPDATE.notifyBeforeReload) {
+            logUpdate('顯示更新通知');
+            showUpdateNotification(info.version);
+          } else {
+            logUpdate('直接重新載入頁面');
+            window.location.reload();
+          }
+        } else {
+          logUpdate('自動重新載入已禁用，不執行更新');
+        }
+        
+        AUTO_UPDATE.lastVersion = info.version;
+      } else {
+        logUpdate(`版本未變更: ${info.version}`);
+      }
+    }
+    
+    // 顯示更新通知
+    function showUpdateNotification(version) {
+      logUpdate(`創建更新通知，版本: ${version}`);
+      
+      // 建立通知元素
+      const notification = document.createElement('div');
+      notification.className = 'update-notification';
+      notification.innerHTML = `
+        <div class="update-notification-content">
+          <span>發現新版本 (${version})，頁面將在 ${AUTO_UPDATE.reloadDelay/1000} 秒後自動重新載入</span>
+          <button onclick="window.location.reload()">立即重新載入</button>
+        </div>
+      `;
+      
+      // 添加到文檔
+      document.body.appendChild(notification);
+      logUpdate('更新通知已添加到頁面');
+      
+      // 添加樣式（如果需要）
+      if (!document.getElementById('update-notification-style')) {
+        const style = document.createElement('style');
+        style.id = 'update-notification-style';
+        style.textContent = `
+          .update-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px;
+            border-radius: 4px;
+            z-index: 9999;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            animation: slideIn 0.3s ease;
+          }
+          .update-notification-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+          }
+          .update-notification button {
+            background-color: white;
+            color: #4CAF50;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+          }
+          @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+          }
+        `;
+        document.head.appendChild(style);
+        logUpdate('更新通知樣式已添加');
+      }
+      
+      // 設置延遲重新載入
+      logUpdate(`設置 ${AUTO_UPDATE.reloadDelay}ms 後自動重新載入頁面`);
+      setTimeout(() => {
+        logUpdate('延遲時間到，準備重新載入頁面');
+        window.location.reload();
+      }, AUTO_UPDATE.reloadDelay);
+    }
+  </script>
+</head>
+<body class="scanner-page">
+  <!-- 標題欄 - 保持在頂部 -->
+  <div class="scanner-header">
+    <h1>
+      <i class="bi bi-qr-code-scan"></i> 門禁掃描器
+      <a href="/" style="position:absolute; right:20px; color:white;">
+        <i class="bi bi-house"></i>
+      </a>
+    </h1>
+  </div>
+  
+  <!-- 音效資源和暗色模式 (不可見) -->
+  <audio id="success-sound" preload="auto"></audio>
+  <audio id="error-sound" preload="auto"></audio>
+  <audio id="warning-sound" preload="auto"></audio>
+  <div class="dimming-screen" id="dimming-screen"></div>
+    <div class="dimming-hint">輕觸螢幕可關閉暗色模式</div>
+  </div>
+  
+  <div class="scanner-container">
+    <!-- 鎖定模式面板 - 安全警告，保持在最上層可見位置 -->
+    <div id="lockdown-panel" class="lockdown-panel">
+      <h3><i class="bi bi-shield-lock-fill"></i> 安全鎖定已啟動</h3>
+      <p>檢測到多次連續失敗驗證嘗試，系統已暫時鎖定。</p>
+      <div class="lockdown-timer" id="lockdown-timer">05:00</div>
+      <p>請等待鎖定時間結束，或由管理員手動解鎖</p>
+      <button id="unlock-btn" class="unlock-btn">
+        <i class="bi bi-unlock-fill"></i> 解除鎖定
+      </button>
+    </div>
+    
+    <!-- 1. 掃描區域 - 移到頂部 -->
+    <div id="qr-reader"></div>
+    
+    <!-- 2. 狀態面板 - 顯示掃描結果 -->
+    <div class="status-panel">
+      <div class="scanner-status">
+        <span class="status-indicator" id="status-indicator"></span>
+        <span id="scanner-status">準備就緒，等待掃描...</span>
+      </div>
+      
+      <div class="user-info" id="user-info">尚未識別用戶</div>
+      
+      <div class="result-panel success" id="status-success">
+        <h3>驗證成功</h3>
+        <p id="success-message">用戶已授權進入</p>
+        <div id="door-status" class="door-status"></div>
+      </div>
+      
+      <div class="result-panel error" id="status-error">
+        <h3>驗證失敗</h3>
+        <p id="error-message">無效的授權碼</p>
+      </div>
+      
+      <div class="result-panel warning" id="status-warning">
+        <h3>警告</h3>
+        <p id="warning-message">系統警告信息</p>
+      </div>
+    </div>
+    
+    <!-- 3. 控制面板區塊 - 移到下方 -->
+    <!-- 安全狀態面板 -->
+    <div id="security-panel" class="security-panel">
+      <div class="security-status">
+        <span>安全狀態: <span id="securityStatusText">正常</span></span>
+        <span>失敗次數: <span id="failureCounter" class="attempt-counter low">0</span></span>
+      </div>
+    </div>
+    
+    <!-- 攝影機控制面板 -->
+    <div class="camera-control-panel">
+      <div class="camera-control-title">
+        攝影機控制
+        <button id="toggle-controls">
+          <i class="bi bi-chevron-down"></i>
+        </button>
+      </div>
+      <div id="controls-container">
+        <div class="control-buttons">
+          <button id="camera-switch" class="control-button">
+            切換鏡頭
+          </button>
+          <button id="dimming-mode" class="control-button">
+            暗色模式
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 日誌面板 - 保持在底部 -->
+    <div class="log-panel" id="log-container">
+      <div class="log-entry">
+        <span class="log-time">[系統啟動]</span> 掃描器初始化完成
+      </div>
+    </div>
+  </div>
+  
+  <div class="scanner-footer">
+    門禁掃描器 &copy; 2025 | 智慧安全解決方案
+  </div>
+  
+  <script src="js/scanner.js"></script>
+</body>
+</html>

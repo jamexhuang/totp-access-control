@@ -1,0 +1,25 @@
+{
+  "name": "home-otp",
+  "version": "1.0.0",
+  "description": "家庭門禁系統 - 使用TOTP進行身份驗證",
+  "main": "src/worker.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "@cloudflare/workers-types": "^4.20250321.0",
+    "bcrypt": "^5.1.1",
+    "bcryptjs": "^3.0.2",
+    "bootstrap-icons": "^1.11.3",
+    "hono": "^4.7.5",
+    "jose": "^6.0.8",
+    "moment": "^2.30.1",
+    "nanoid": "^3.3.4"
+  },
+  "devDependencies": {
+    "buffer": "^6.0.3",
+    "otpauth": "^9.3.6",
+    "wrangler": "^4.1.0"
+  }
+}

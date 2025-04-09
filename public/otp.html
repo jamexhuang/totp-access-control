@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <!-- 添加PWA相關meta標籤 -->
+  <meta name="theme-color" content="#007bff">
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <title>門禁通行證</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/otpauth/dist/otpauth.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html5-qrcode/html5-qrcode.min.js"></script>
+  <!-- 添加蘋果裝置的PWA圖標 -->
+  <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+  <style>
+    body.otp-page {
+      background-color: #f5f5f5;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      padding: 0;
+      margin: 0;
+    }
+    
+    .otp-header {
+      background-color: var(--primary-color);
+      color: white;
+      padding: 15px;
+      text-align: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      position: relative;
+    }
+    
+    .otp-header h1 {
+      margin: 0;
+      font-size: 1.5em;
+    }
+    
+    .home-link {
+      position: absolute;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: white;
+      font-size: 1.2em;
+    }
+    
+    .user-info {
+      font-size: 0.9em;
+      margin-top: 5px;
+      opacity: 0.9;
+    }
+    
+    .otp-container {
+      flex: 1;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .otp-card {
+      background-color: white;
+      border-radius: 12px;
+      padding: 15px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      margin-bottom: 15px;
+    }
+    
+    .qr-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 0 auto;
+      width: 100%;
+      position: relative;
+      padding-top: 100%; /* 建立1:1比例的容器 */
+    }
+    
+    #qrCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain; /* 確保內容保持比例 */
+    }
+    
+    .otp-display {
+      font-size: 2rem;
+      font-weight: bold;
+      text-align: center;
+      font-family: monospace;
+      margin: 15px 0;
+      color: var(--primary-color);
+      letter-spacing: 2px;
+    }
+    
+    .timer-container {
+      width: 100%;
+      margin-bottom: 10px;
+    }
+    
+    .timer-bar {
+      height: 8px;
+      background-color: #e9ecef;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 5px;
+    }
+    
+    .timer-progress {
+      height: 100%;
+      background-color: var(--primary-color);
+      transition: width 1s linear;
+    }
+    
+    .timer-text {
+      font-size: 0.9em;
+      text-align: center;
+      color: var(--text-secondary);
+    }
+    
+    .add-to-home {
+      background-color: #fffde7;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 10px 0;
+      text-align: center;
+      font-size: 0.9em;
+      border: 1px dashed #ffd600;
+      display: none;
+    }
+    
+    .add-to-home.visible {
+      display: block;
+    }
+    
+    .otp-footer {
+      text-align: center;
+      padding: 12px;
+      font-size: 0.8em;
+      color: var(--text-secondary);
+      background-color: white;
+      border-top: 1px solid var(--border-color);
+      margin-top: auto;
+    }
+    
+    .info-text {
+      text-align: center;
+      margin-top: 10px;
+      color: var(--text-secondary);
+      font-size: 0.85em;
+    }
+    
+    /* 針對手機版的特定樣式 */
+    @media (max-width: 576px) {
+      .otp-container {
+        padding: 8px;
+      }
+      
+      .otp-card {
+        padding: 10px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+      }
+      
+      #qrCanvas {
+        width: 100%;
+        max-width: none;
+        height: auto;
+      }
+      
+      .otp-display {
+        margin: 10px 0;
+      }
+      
+      .info-text {
+        font-size: 0.8em;
+        margin-top: 8px;
+      }
+      
+      .qr-container {
+        padding-top: 100%; /* 確保在手機上也是正方形 */
+      }
+    }
+    
+    /* 針對更小的手機屏幕 */
+    @media (max-width: 360px) {
+      .otp-header h1 {
+        font-size: 1.3em;
+      }
+      
+      .otp-card {
+        padding: 8px;
+      }
+      
+      .otp-display {
+        font-size: 1.8rem;
+      }
+    }
+  </style>
+</head>
+<body class="otp-page">
+  <div class="otp-header">
+    <h1>
+      <i class="bi bi-shield-check"></i> 門禁通行證
+    </h1>
+    <a href="/" class="home-link">
+      <i class="bi bi-house"></i>
+    </a>
+    <div id="user-info" class="user-info">用戶資訊載入中...</div>
+  </div>
+  
+  <div class="otp-container">
+    <div id="otp-container" class="otp-card">
+      <div class="qr-container">
+        <canvas id="qrCanvas" width="400" height="400"></canvas>
+      </div>
+      
+      <div class="otp-display" id="otp-code">------</div>
+      
+      <div class="timer-container">
+        <div class="timer-bar">
+          <div class="timer-progress" id="timer-progress"></div>
+        </div>
+        <div class="timer-text" id="timer-text">更新時間: 30秒</div>
+      </div>
+      
+      <p class="info-text">
+        <i class="bi bi-info-circle"></i> 請讓掃描器掃描QR碼以通過門禁系統
+      </p>
+      <div id="debug-info" class="debug-info" style="display: none;"></div>
+    </div>
+    
+    <div id="add-to-home" class="add-to-home">
+      <p><strong><i class="bi bi-pin-angle"></i> 提示:</strong> 請將此應用添加到主螢幕，便於離線使用！</p>
+      <p>iOS: 點擊分享按鈕，然後選擇"添加到主螢幕"</p>
+      <p>Android: 點擊設置按鈕，然後選擇"添加到主螢幕"</p>
+    </div>
+  </div>
+  
+  <div class="otp-footer">
+    門禁通行證 &copy; 2025 | 智慧安全解決方案
+  </div>
+  
+  <!-- 載入OTP相關腳本 -->
+  <script src="js/otp.js"></script>
+</body>
+</html>

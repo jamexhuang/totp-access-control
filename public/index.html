@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>門禁系統狀態</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- 導航欄將由navbar.js注入 -->
+
+  <!-- 主要內容區域 -->
+  <div class="content">
+    <div class="top-bar">
+      <h1 class="h5 mb-0">系統狀態</h1>
+    </div>
+
+    <div class="row">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header">系統概覽</div>
+          <div class="card-body">
+            <div class="row text-center">
+              <div class="col-md-4 mb-4">
+                <i class="bi bi-clock-history" style="font-size: 2rem; color: var(--primary-color);"></i>
+                <h3 class="mt-2 mb-2">系統運行時間</h3>
+                <div class="h3 fw-bold" id="uptime">--:--:--</div>
+                <div class="text-muted small" id="start-time">開始時間: --</div>
+              </div>
+              
+              <div class="col-md-4 mb-4">
+                <i class="bi bi-people" style="font-size: 2rem; color: var(--primary-color);"></i>
+                <h3 class="mt-2 mb-2">註冊用戶</h3>
+                <div class="h3 fw-bold" id="user-count">--</div>
+                <div class="text-muted small">
+                  活動用戶數量: <span id="active-user-count">--</span>
+                  <div class="mt-1 small text-secondary">
+                    已停用用戶: <span id="disabled-user-count">--</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="col-md-4 mb-4">
+                <i class="bi bi-journal-text" style="font-size: 2rem; color: var(--primary-color);"></i>
+                <h3 class="mt-2 mb-2">訪問記錄</h3>
+                <div class="h3 fw-bold" id="log-count">--</div>
+                <div class="text-muted small" id="last-access">最後訪問: --</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span>最近訪問記錄</span>
+          <button id="refresh-btn" class="btn btn-primary">
+            <i class="bi bi-arrow-clockwise"></i> 刷新數據
+          </button>
+        </div>
+      </div>
+      
+      <table class="table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>用戶</th>
+            <th>動作</th>
+            <th>時間</th>
+          </tr>
+        </thead>
+        <tbody id="logs-table-body">
+          <tr>
+            <td colspan="4" style="text-align: center;">正在載入數據...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="display: flex; gap: 20px; justify-content: center; margin-top: 30px;">
+      <a href="/user.html" class="btn btn-primary">
+        <i class="bi bi-people"></i> 用戶管理
+      </a>
+      <a href="/scanner.html" class="btn btn-success">
+        <i class="bi bi-qr-code-scan"></i> 掃描器
+      </a>
+    </div>
+
+    <div class="footer">
+      門禁系統 © 2025 | 智慧安全解決方案
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/navbar.js"></script>
+  <script>
+    // 格式化時間
+    function formatDuration(milliseconds) {
+      if (!milliseconds) return "--:--:--";
+      
+      const seconds = Math.floor(milliseconds / 1000);
+      const minutes = Math.floor(seconds / 60);
+      const hours = Math.floor(minutes / 60);
+      const days = Math.floor(hours / 24);
+      
+      if (days > 0) {
+        return `${days}天 ${hours % 24}小時 ${minutes % 60}分鐘`;
+      } else {
+        return `${hours}小時 ${minutes % 60}分鐘 ${seconds % 60}秒`;
+      }
+    }
+    
+    // 格式化日期時間
+    function formatDateTime(timestamp) {
+      if (!timestamp) return "--";
+      
+      const date = new Date(timestamp);
+      return date.toLocaleString('zh-TW', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+    }
+    
+    // 檢查用戶會話 - 改進版本，避免錯誤時直接重定向
+    async function checkSession() {
+      try {
+        const response = await fetch('/auth/check');
+        const data = await response.json();
+        
+        if (data.authenticated && data.user) {
+          // 更新用戶資訊
+          document.getElementById('username').textContent = data.user.username;
+          document.getElementById('user-email').textContent = data.user.email || '無信箱資訊';
+        } else {
+          // 未登錄但不立即重定向，給用戶顯示信息
+          console.warn('用戶未登入或會話已過期');
+          document.getElementById('username').textContent = '未登入';
+          document.getElementById('user-email').textContent = '請重新登入';
+          
+          // 延時重定向，使用戶看到狀態
+          setTimeout(() => {
+            window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.pathname);
+          }, 2000);
+        }
+      } catch (error) {
+        console.error('檢查會話錯誤:', error);
+        // 不立即重定向，只顯示錯誤狀態
+        document.getElementById('username').textContent = '會話檢查錯誤';
+      }
+    }
+    
+    // 載入系統狀態 - 改進版本，添加錯誤處理與重試機制
+    async function loadSystemStatus() {
+      try {
+        // 設置較長的超時時間
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        
+        const response = await fetch('/api/status', {
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          throw new Error(`伺服器返回錯誤碼: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log('收到系統狀態回應:', result); // 添加日誌輸出
+        
+        // 更加詳細的檢查回應格式
+        let status;
+        if (result.success && result.data) {
+          status = result.data; // 新格式：提取 data 欄位
+        } else if (result.uptime !== undefined) {
+          status = result; // 舊格式：直接包含 uptime
+        } else {
+          throw new Error('無法識別系統狀態回應格式');
+        }
+        
+        // 更新運行時間
+        document.getElementById('uptime').textContent = formatDuration(status.uptime);
+        document.getElementById('start-time').textContent = `開始時間: ${formatDateTime(status.start_time)}`;
+        
+        // 更新用戶數
+        document.getElementById('user-count').textContent = status.user_count || 0;
+        document.getElementById('active-user-count').textContent = status.active_user_count || 0;
+        document.getElementById('disabled-user-count').textContent = 
+          (status.user_count - status.active_user_count) || 0;
+        
+        // 更新日誌資訊
+        document.getElementById('log-count').textContent = status.log_count || 0;
+        if (status.last_activity) {
+          document.getElementById('last-access').textContent = `最後訪問: ${formatDateTime(status.last_activity.timestamp)}`;
+        } else {
+          document.getElementById('last-access').textContent = '最後訪問: 尚無訪問記錄';
+        }
+      } catch (error) {
+        console.error('載入系統狀態錯誤:', error);
+        document.getElementById('uptime').textContent = '載入失敗';
+        document.getElementById('user-count').textContent = '載入失敗';
+        document.getElementById('log-count').textContent = '載入失敗';
+        
+        // 避免捕獲到的錯誤導致用戶被登出
+        if (error.name === 'AbortError') {
+          console.log('請求超時，可能是網路問題');
+        }
+      }
+    }
+    
+    // 載入日誌列表 - 改進錯誤處理
+    async function loadLogs() {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        
+        const response = await fetch('/api/logs', {
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          throw new Error(`伺服器返回錯誤碼: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log('收到日誌回應:', result); // 添加日誌輸出
+        
+        // 更加詳細的檢查回應格式
+        let logs;
+        if (result.success && result.data) {
+          logs = result.data; // 新格式：提取 data 欄位
+        } else if (Array.isArray(result)) {
+          logs = result; // 舊格式：直接是陣列
+        } else {
+          logs = [];
+          console.warn('無法識別日誌回應格式:', result);
+        }
+        
+        if (!Array.isArray(logs)) {
+          console.error('日誌資料不是陣列:', logs);
+          logs = []; // 確保 logs 是陣列
+        }
+        
+        const tableBody = document.getElementById('logs-table-body');
+        
+        if (logs.length === 0) {
+          tableBody.innerHTML = `
+            <tr>
+              <td colspan="4" style="text-align: center;">尚無訪問記錄</td>
+          `;
+          return;
+        }
+        
+        tableBody.innerHTML = '';
+        logs.forEach((log, index) => {
+          const tr = document.createElement('tr');
+          
+          const logTime = formatDateTime(log.timestamp);
+          
+          tr.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${log.user_name || '未知'}</td>
+            <td>${log.action || '--'}</td>
+            <td>${logTime}</td>
+          `;
+          
+          tableBody.appendChild(tr);
+        });
+      } catch (error) {
+        console.error('載入日誌列表錯誤:', error);
+        document.getElementById('logs-table-body').innerHTML = `
+          <tr>
+            <td colspan="4" style="text-align: center;">載入錯誤: ${error.name === 'AbortError' ? '請求超時' : error.message}</td>
+          </tr>
+        `;
+      }
+    }
+    
+    // 刷新按鈕點擊事件
+    document.getElementById('refresh-btn').addEventListener('click', function() {
+      loadSystemStatus();
+      loadLogs();
+    });
+    
+    // 定期更新系統狀態
+    function startUpdateTimer() {
+      // 每10秒更新一次
+      setInterval(loadSystemStatus, 10000);
+    }
+    
+    // 頁面載入時初始化
+    window.addEventListener('DOMContentLoaded', function() {
+      checkSession();
+      loadSystemStatus();
+      loadLogs();
+      startUpdateTimer();
+    });
+  </script>
+</body>
+</html>

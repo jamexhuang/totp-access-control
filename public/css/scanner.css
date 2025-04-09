@@ -1,0 +1,403 @@
+body.scanner-page {
+  background-color: #222;
+  color: #fff;
+}
+
+.scanner-header {
+  background-color: #000;
+  color: white;
+  padding: 15px;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+
+.scanner-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  position: relative;
+}
+
+#qr-reader {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000;
+}
+
+#qr-reader select, 
+#qr-reader button {
+  background-color: #555;
+  color: white;
+  border: none;
+  padding: 8px;
+  border-radius: 4px;
+}
+
+.status-panel {
+  background-color: rgba(0, 0, 0, 0.7);
+  border-radius: 8px;
+  margin-top: 20px;
+  padding: 15px;
+  text-align: center;
+}
+
+.scanner-status {
+  font-size: 1.2em;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.status-indicator {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: #666;
+  display: inline-block;
+  margin-right: 10px;
+}
+
+.status-indicator.active {
+  background-color: #4CAF50;
+  box-shadow: 0 0 10px rgba(76, 175, 80, 0.8);
+  animation: pulse 1.5s infinite;
+}
+
+.status-indicator.warning {
+  background-color: #FFA500;
+  box-shadow: 0 0 10px rgba(255, 165, 0, 0.8);
+  animation: pulse 1.5s infinite;
+}
+
+.status-indicator.danger {
+  background-color: #F44336;
+  box-shadow: 0 0 10px rgba(244, 67, 54, 0.8);
+  animation: pulse 1.5s infinite;
+}
+
+.user-info {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin: 15px 0;
+}
+
+.result-panel {
+  padding: 20px;
+  border-radius: 8px;
+  margin-top: 10px;
+  display: none;
+  border: 1px solid;
+}
+
+.result-panel.success {
+  background-color: rgba(0, 128, 0, 0.2);
+  color: #4CAF50;
+  border-color: #4CAF50;
+}
+
+.result-panel.error {
+  background-color: rgba(255, 0, 0, 0.2);
+  color: #ff5252;
+  border-color: #ff5252;
+}
+
+.result-panel.warning {
+  background-color: rgba(255, 165, 0, 0.2);
+  color: #FFA500;
+  border-color: #FFA500;
+}
+
+.log-panel {
+  margin-top: 20px;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 8px;
+  padding: 10px;
+  height: 150px;
+  overflow-y: auto;
+}
+
+.log-entry {
+  font-family: monospace;
+  font-size: 0.9em;
+  padding: 5px;
+  border-bottom: 1px solid #333;
+}
+
+.log-time {
+  color: #aaa;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
+  }
+}
+
+.scanner-footer {
+  background-color: #000;
+  padding: 10px;
+  text-align: center;
+  font-size: 0.8em;
+  color: #aaa;
+}
+
+/* 攝影機切換控制樣式 */
+.camera-controls {
+  display: flex;
+  justify-content: center;
+  margin: 10px auto;
+  max-width: 500px;
+}
+
+.camera-switch-btn {
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 0.9em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.camera-switch-btn i {
+  margin-right: 5px;
+}
+
+.camera-switch-btn:hover {
+  background-color: rgba(0, 0, 0, 0.9);
+}
+
+.camera-label {
+  display: inline-block;
+  margin-left: 10px;
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 4px 8px;
+  border-radius: 10px;
+  font-size: 0.8em;
+}
+
+/* 新增開門狀態指示器樣式 */
+.door-status {
+  margin-top: 10px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-weight: bold;
+  display: inline-block;
+}
+
+.door-success {
+  background-color: rgba(0, 128, 0, 0.2);
+  color: #4CAF50;
+  border: 1px solid #4CAF50;
+}
+
+.door-error {
+  background-color: rgba(255, 165, 0, 0.2);
+  color: #FF8C00;
+  border: 1px solid #FF8C00;
+}
+
+/* 新增鎖定模式樣式 */
+.lockdown-panel {
+  background-color: rgba(244, 67, 54, 0.2);
+  border: 2px solid #F44336;
+  border-radius: 8px;
+  padding: 15px;
+  margin: 20px auto;
+  text-align: center;
+  display: none;
+  max-width: 500px;
+}
+
+.lockdown-panel h3 {
+  color: #F44336;
+  margin-top: 0;
+}
+
+.lockdown-timer {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin: 15px 0;
+}
+
+.unlock-btn {
+  background-color: #F44336;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  margin-top: 10px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.unlock-btn:hover {
+  background-color: #D32F2F;
+}
+
+/* 安全狀態面板 */
+.security-panel {
+  background-color: rgba(33, 33, 33, 0.8);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 15px auto;
+  max-width: 500px;
+}
+
+.security-status {
+  font-size: 0.9em;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.attempt-counter {
+  font-weight: bold;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+}
+
+.attempt-counter.low {
+  background-color: rgba(76, 175, 80, 0.2);
+  color: #4CAF50;
+}
+
+.attempt-counter.medium {
+  background-color: rgba(255, 165, 0, 0.2);
+  color: #FFA500;
+}
+
+.attempt-counter.high {
+  background-color: rgba(244, 67, 54, 0.2);
+  color: #F44336;
+}
+
+/* 新增相機控制面板樣式 */
+.camera-control-panel {
+  background-color: rgba(33, 33, 33, 0.8);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 10px auto;
+  max-width: 500px;
+}
+
+.camera-control-title {
+  color: #ddd;
+  font-size: 0.9em;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.camera-control-title button {
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 0.8em;
+  cursor: pointer;
+}
+
+.control-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.control-button {
+  flex: 1;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 1em;
+}
+
+.control-button:hover {
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+.control-button.active {
+  background-color: #2196F3;
+}
+
+/* 純黑模式樣式 */
+.dimming-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #000;
+  z-index: 1000;
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.dimming-hint {
+  color: #555;
+  font-size: 0.8em;
+  position: absolute;
+  bottom: 20px;
+  text-align: center;
+  width: 100%;
+}
+
+/* 更新通知樣式 */
+.update-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background-color: #4CAF50;
+  color: white;
+  padding: 15px;
+  border-radius: 4px;
+  z-index: 9999;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  animation: slideIn 0.3s ease;
+}
+
+.update-notification-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.update-notification button {
+  background-color: white;
+  color: #4CAF50;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
