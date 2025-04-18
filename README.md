@@ -9,6 +9,7 @@ This project is for Cloudflare Workers!
 - 支援管理員多帳號、密碼與信箱管理
 
 ## 安裝與執行
+
 1. 安裝相依套件：
    ```
    npm install
@@ -33,6 +34,16 @@ This project is for Cloudflare Workers!
    wrangler publish
    ```
 3. 部署完成後，即可使用自動分配的子網域存取門禁系統。
+
+4. 請先修改設定：src/config/constants.js、wrangler.toml，本項目預設與home assistant交互，但可以替換成其他解決方案
+
+   ```javascript
+   export const DOOR_API = {
+  //HAOS API
+  url: "https://home.yourdomain.com/api/services/script/your_script",
+  apikey: "your_api_key",
+};
+   ```
 
 ## 系統使用方式
 1. 管理員可透過 /login.html 登入後台，新增使用者與查看驗證日誌。
