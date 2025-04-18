@@ -58,7 +58,14 @@ This project is for Cloudflare Workers!
 歡迎提出 issue 或 pull request，讓此專案更臻完善。
 
 ## TODO
+
 - 讓Session長期化(三個月)，但要可以遠端關閉Session、顯示IP、時間等安全性的功能 (session.html)
 - 遠端控制scanner運作時間、運作狀態 (scanner.html)
 - 新增一個強制開門的裝置
 - 把secret key用env變數儲存
+
+## Screen Shots
+
+<img width="1728" alt="image" src="https://github.com/user-attachments/assets/a620e417-23ee-4567-9d95-592cc7c91604" />
+<img width="1728" alt="image" src="https://github.com/user-attachments/assets/7b6f4235-5272-4715-a40f-d1d6f3fb3868" />
+
