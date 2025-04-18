@@ -37,14 +37,6 @@ This project is for Cloudflare Workers!
 
 4. 請先修改設定：src/config/constants.js、wrangler.toml，本項目預設與home assistant交互，但可以替換成其他解決方案
 
-   ```javascript
-   export const DOOR_API = {
-  //HAOS API
-  url: "https://home.yourdomain.com/api/services/script/your_script",
-  apikey: "your_api_key",
-};
-   ```
-
 ## 系統使用方式
 1. 管理員可透過 /login.html 登入後台，新增使用者與查看驗證日誌。
 2. 一般使用者透過 /otp.html 執行動態碼功能，以產生並掃描 TOTP QR 碼實現驗證。
@@ -67,5 +59,4 @@ This project is for Cloudflare Workers!
 ## Screen Shots
 
 <img width="1728" alt="image" src="https://github.com/user-attachments/assets/a620e417-23ee-4567-9d95-592cc7c91604" />
-<img width="1728" alt="image" src="https://github.com/user-attachments/assets/7b6f4235-5272-4715-a40f-d1d6f3fb3868" />
-
+<img width="1728" alt="image" src="https://github.com/user-attachments/assets/d6c30bea-8e1b-4d74-8f2e-abc80aa8182f" />
